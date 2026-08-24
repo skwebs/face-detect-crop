@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+  />
+  <title>Smart Face Cropper</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #d9dee5;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1115;
+        --panel: #181b21;
+        --text: #f3f4f6;
+        --muted: #9ca3af;
+        --border: #303641;
+      }
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    }
+
+    .app {
+      width: min(1100px, 100%);
+      margin: auto;
+      padding: 18px;
+    }
+
+    header {
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 25px;
+    }
+
+    header p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .control-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    select,
+    input[type="number"] {
+      width: 100%;
+      min-height: 44px;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .dimensions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      font-size: 13px;
+    }
+
+    button {
+      width: 100%;
+      min-height: 44px;
+      border: 0;
+      border-radius: 9px;
+      padding: 9px 12px;
+      background: var(--primary);
+      color: white;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: var(--primary-hover);
+    }
+
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    button + button {
+      margin-top: 8px;
+    }
+
+    .canvas-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 500px;
+      padding: 20px;
+      background:
+        linear-gradient(45deg, #ddd 25%, transparent 25%),
+        linear-gradient(-45deg, #ddd 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ddd 75%),
+        linear-gradient(-45deg, transparent 75%, #ddd 75%);
+      background-size: 20px 20px;
+      background-position:
+        0 0,
+        0 10px,
+        10px -10px,
+        -10px 0;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: 4px;
+      touch-action: none;
+      background: white;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .status {
+      margin-top: 12px;
+      min-height: 22px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .face-info {
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      background: rgba(37, 99, 235, 0.08);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .range-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .value {
+      min-width: 45px;
+      text-align: right;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 800px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .canvas-wrapper {
+        min-height: 350px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <header>
+    <h1>Smart Face Cropper</h1>
+    <p>Detect a face and automatically create a crop using your selected dimensions.</p>
+  </header>
+
+  <div class="layout">
+
+    <!-- CONTROLS -->
+    <section class="panel">
+
+      <div class="control-group">
+        <label for="imageInput">Choose image</label>
+
+        <input
+          id="imageInput"
+          type="file"
+          accept="image/*"
+        />
+      </div>
+
+      <div class="control-group">
+
+        <label for="ratioSelect">
+          Output ratio
+        </label>
+
+        <select id="ratioSelect">
+
+          <option value="35:45">
+            Passport — 35 × 45
+          </option>
+
+          <option value="1:1">
+            Square — 1 × 1
+          </option>
+
+          <option value="2:3">
+            Portrait — 2 × 3
+          </option>
+
+          <option value="3:4">
+            Portrait — 3 × 4
+          </option>
+
+          <option value="4:5">
+            Portrait — 4 × 5
+          </option>
+
+          <option value="16:9">
+            Landscape — 16 × 9
+          </option>
+
+          <option value="custom">
+            Custom
+          </option>
+
+        </select>
+
+      </div>
+
+      <div
+        id="customDimensions"
+        class="control-group hidden"
+      >
+
+        <label>Custom dimensions</label>
+
+        <div class="dimensions">
+
+          <input
+            id="customWidth"
+            type="number"
+            min="1"
+            value="800"
+            placeholder="Width"
+          />
+
+          <input
+            id="customHeight"
+            type="number"
+            min="1"
+            value="1000"
+            placeholder="Height"
+          />
+
+        </div>
+
+      </div>
+
+      <div class="control-group">
+
+        <label>
+          Face vertical position
+        </label>
+
+        <div class="range-row">
+
+          <input
+            id="verticalPosition"
+            type="range"
+            min="0"
+            max="100"
+            value="50"
+          />
+
+          <span
+            id="verticalValue"
+            class="value"
+          >
+            50%
+          </span>
+
+        </div>
+
+      </div>
+
+      <div class="control-group">
+
+        <label>
+          Zoom
+        </label>
+
+        <div class="range-row">
+
+          <input
+            id="zoom"
+            type="range"
+            min="0.5"
+            max="3"
+            step="0.01"
+            value="1"
+          />
+
+          <span
+            id="zoomValue"
+            class="value"
+          >
+            1.00×
+          </span>
+
+        </div>
+
+      </div>
+
+      <div
+        id="faceInfo"
+        class="face-info"
+      >
+        Upload an image to detect the face.
+      </div>
+
+      <button id="autoCrop">
+        Auto Detect & Crop
+      </button>
+
+      <button
+        id="reset"
+        class="secondary"
+      >
+        Reset
+      </button>
+
+      <button
+        id="download"
+        class="secondary"
+      >
+        Download Crop
+      </button>
+
+      <div
+        id="status"
+        class="status"
+      ></div>
+
+    </section>
+
+
+    <!-- PREVIEW -->
+    <section class="panel">
+
+      <div class="canvas-wrapper">
+
+        <canvas
+          id="canvas"
+          width="700"
+          height="900"
+        ></canvas>
+
+      </div>
+
+    </section>
+
+  </div>
+
+</div>
+
+
+<script type="module">
+
+/*
+ * MediaPipe Tasks Vision
+ *
+ * Face detector runs completely in the browser.
+ */
+
+const MP_VERSION = "0.10.22-rc.20250304";
+
+const {
+  FilesetResolver,
+  FaceDetector
+} = await import(
+  `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/+esm`
+);
+
+
+// ------------------------------------------------------------
+// DOM
+// ------------------------------------------------------------
+
+const imageInput =
+  document.getElementById("imageInput");
+
+const ratioSelect =
+  document.getElementById("ratioSelect");
+
+const customDimensions =
+  document.getElementById("customDimensions");
+
+const customWidth =
+  document.getElementById("customWidth");
+
+const customHeight =
+  document.getElementById("customHeight");
+
+const verticalPosition =
+  document.getElementById("verticalPosition");
+
+const verticalValue =
+  document.getElementById("verticalValue");
+
+const zoom =
+  document.getElementById("zoom");
+
+const zoomValue =
+  document.getElementById("zoomValue");
+
+const canvas =
+  document.getElementById("canvas");
+
+const ctx =
+  canvas.getContext("2d");
+
+const status =
+  document.getElementById("status");
+
+const faceInfo =
+  document.getElementById("faceInfo");
+
+const autoCropButton =
+  document.getElementById("autoCrop");
+
+const resetButton =
+  document.getElementById("reset");
+
+const downloadButton =
+  document.getElementById("download");
+
+
+// ------------------------------------------------------------
+// STATE
+// ------------------------------------------------------------
+
+let detector = null;
+
+let image = null;
+
+let face = null;
+
+let crop = null;
+
+let dragging = false;
+
+let lastPointerX = 0;
+
+let lastPointerY = 0;
+
+let userOffsetX = 0;
+
+let userOffsetY = 0;
+
+
+// ------------------------------------------------------------
+// INITIALIZE FACE DETECTOR
+// ------------------------------------------------------------
+
+async function initializeDetector() {
+
+  try {
+
+    status.textContent =
+      "Loading face detection model…";
+
+    const vision =
+      await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@"
+        + MP_VERSION
+        + "/wasm"
+      );
+
+    detector =
+      await FaceDetector.createFromOptions(
+        vision,
+        {
+          baseOptions: {
+            modelAssetPath:
+              "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+
+            delegate: "GPU"
+          },
+
+          runningMode: "IMAGE",
+
+          minDetectionConfidence: 0.5
+        }
+      );
+
+    status.textContent =
+      "Face detector ready.";
+
+  } catch (error) {
+
+    console.error(error);
+
+    status.textContent =
+      "Could not load face detection model.";
+
+  }
+
+}
+
+initializeDetector();
+
+
+// ------------------------------------------------------------
+// IMAGE LOAD
+// ------------------------------------------------------------
+
+imageInput.addEventListener(
+  "change",
+  async () => {
+
+    const file =
+      imageInput.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const url =
+      URL.createObjectURL(file);
+
+    const img =
+      new Image();
+
+    img.onload =
+      async () => {
+
+        image = img;
+
+        userOffsetX = 0;
+
+        userOffsetY = 0;
+
+        zoom.value = 1;
+
+        zoomValue.textContent = "1.00×";
+
+        status.textContent =
+          "Detecting face…";
+
+        await detectFace();
+
+        URL.revokeObjectURL(url);
+
+      };
+
+    img.onerror =
+      () => {
+
+        status.textContent =
+          "Could not load image.";
+
+        URL.revokeObjectURL(url);
+
+      };
+
+    img.src = url;
+
+  }
+);
+
+
+// ------------------------------------------------------------
+// DETECT FACE
+// ------------------------------------------------------------
+
+async function detectFace() {
+
+  if (!image || !detector) {
+    return;
+  }
+
+  try {
+
+    const result =
+      detector.detect(image);
+
+    if (
+      !result.detections ||
+      result.detections.length === 0
+    ) {
+
+      face = null;
+
+      faceInfo.textContent =
+        "No face detected. You can still crop manually.";
+
+      status.textContent =
+        "No face detected.";
+
+      calculateCrop();
+
+      render();
+
+      return;
+    }
+
+
+    /*
+     * If multiple faces exist,
+     * choose the largest face.
+     */
+
+    const detections =
+      [...result.detections].sort(
+        (a, b) => {
+
+          const aw =
+            a.boundingBox?.width || 0;
+
+          const ah =
+            a.boundingBox?.height || 0;
+
+          const bw =
+            b.boundingBox?.width || 0;
+
+          const bh =
+            b.boundingBox?.height || 0;
+
+          return (bw * bh) - (aw * ah);
+
+        }
+      );
+
+
+    const detection =
+      detections[0];
+
+    const box =
+      detection.boundingBox;
+
+
+    face = {
+
+      x: box.originX,
+
+      y: box.originY,
+
+      width: box.width,
+
+      height: box.height
+
+    };
+
+
+    faceInfo.innerHTML =
+      `
+        <strong>Face detected</strong><br>
+        Position: ${Math.round(face.x)} × ${Math.round(face.y)}<br>
+        Size: ${Math.round(face.width)} × ${Math.round(face.height)}
+      `;
+
+
+    status.textContent =
+      "Face detected. Crop calculated automatically.";
+
+
+    calculateCrop();
+
+    render();
+
+  } catch (error) {
+
+    console.error(error);
+
+    status.textContent =
+      "Face detection failed.";
+
+  }
+
+}
+
+
+// ------------------------------------------------------------
+// OUTPUT RATIO
+// ------------------------------------------------------------
+
+function getAspectRatio() {
+
+  if (ratioSelect.value === "custom") {
+
+    const w =
+      Math.max(
+        1,
+        Number(customWidth.value) || 1
+      );
+
+    const h =
+      Math.max(
+        1,
+        Number(customHeight.value) || 1
+      );
+
+    return w / h;
+  }
+
+
+  const [
+    w,
+    h
+  ] =
+    ratioSelect.value
+      .split(":")
+      .map(Number);
+
+  return w / h;
+
+}
+
+
+// ------------------------------------------------------------
+// CALCULATE CROP
+// ------------------------------------------------------------
+
+function calculateCrop() {
+
+  if (!image) {
+    return;
+  }
+
+
+  const aspect =
+    getAspectRatio();
+
+
+  /*
+   * Default crop size.
+   *
+   * We start with approximately
+   * 65% of the image height.
+   */
+
+  let cropHeight =
+    image.height * 0.65;
+
+  let cropWidth =
+    cropHeight * aspect;
+
+
+  /*
+   * If width becomes too large,
+   * calculate based on width.
+   */
+
+  if (cropWidth > image.width) {
+
+    cropWidth =
+      image.width * 0.9;
+
+    cropHeight =
+      cropWidth / aspect;
+
+  }
+
+
+  /*
+   * Face-aware positioning.
+   */
+
+  let centerX =
+    image.width / 2;
+
+  let centerY =
+    image.height / 2;
+
+
+  if (face) {
+
+    /*
+     * Center horizontally on face.
+     */
+
+    centerX =
+      face.x +
+      face.width / 2;
+
+
+    /*
+     * Position face approximately
+     * 40% from top of crop.
+     *
+     * This leaves some headroom.
+     */
+
+    centerY =
+      face.y +
+      face.height * 0.40;
+
+
+    /*
+     * User vertical adjustment.
+     */
+
+    const p =
+      Number(verticalPosition.value) / 100;
+
+    const adjustment =
+      (p - 0.5) *
+      cropHeight *
+      0.8;
+
+    centerY += adjustment;
+
+  }
+
+
+  /*
+   * Apply user zoom.
+   */
+
+  const z =
+    Number(zoom.value);
+
+
+  cropWidth /= z;
+
+  cropHeight /= z;
+
+
+  /*
+   * Prevent crop from exceeding image.
+   */
+
+  cropWidth =
+    Math.min(
+      cropWidth,
+      image.width
+    );
+
+  cropHeight =
+    Math.min(
+      cropHeight,
+      image.height
+    );
+
+
+  /*
+   * Apply manual drag offset.
+   */
+
+  centerX += userOffsetX;
+
+  centerY += userOffsetY;
+
+
+  /*
+   * Clamp crop to image.
+   */
+
+  let x =
+    centerX -
+    cropWidth / 2;
+
+  let y =
+    centerY -
+    cropHeight / 2;
+
+
+  x =
+    Math.max(
+      0,
+      Math.min(
+        x,
+        image.width - cropWidth
+      )
+    );
+
+
+  y =
+    Math.max(
+      0,
+      Math.min(
+        y,
+        image.height - cropHeight
+      )
+    );
+
+
+  crop = {
+
+    x,
+
+    y,
+
+    width: cropWidth,
+
+    height: cropHeight
+
+  };
+
+}
+
+
+// ------------------------------------------------------------
+// CANVAS OUTPUT SIZE
+// ------------------------------------------------------------
+
+function calculateCanvasSize() {
+
+  const aspect =
+    getAspectRatio();
+
+
+  const maxSize =
+    900;
+
+
+  let width;
+  let height;
+
+
+  if (aspect >= 1) {
+
+    width =
+      maxSize;
+
+    height =
+      Math.round(
+        width / aspect
+      );
+
+  } else {
+
+    height =
+      maxSize;
+
+    width =
+      Math.round(
+        height * aspect
+      );
+
+  }
+
+
+  return {
+    width,
+    height
+  };
+
+}
+
+
+// ------------------------------------------------------------
+// RENDER
+// ------------------------------------------------------------
+
+function render() {
+
+  if (!image || !crop) {
+
+    ctx.clearRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    return;
+
+  }
+
+
+  const size =
+    calculateCanvasSize();
+
+
+  canvas.width =
+    size.width;
+
+  canvas.height =
+    size.height;
+
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+
+  /*
+   * Draw selected crop area.
+   */
+
+  ctx.drawImage(
+    image,
+
+    crop.x,
+    crop.y,
+    crop.width,
+    crop.height,
+
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+
+  /*
+   * Optional face guide.
+   */
+
+  if (face) {
+
+    const fx =
+      (
+        face.x -
+        crop.x
+      )
+      *
+      canvas.width /
+      crop.width;
+
+
+    const fy =
+      (
+        face.y -
+        crop.y
+      )
+      *
+      canvas.height /
+      crop.height;
+
+
+    const fw =
+      face.width *
+      canvas.width /
+      crop.width;
+
+
+    const fh =
+      face.height *
+      canvas.height /
+      crop.height;
+
+
+    /*
+     * Don't show guide if completely outside.
+     */
+
+    if (
+      fx + fw > 0 &&
+      fy + fh > 0 &&
+      fx < canvas.width &&
+      fy < canvas.height
+    ) {
+
+      ctx.save();
+
+      ctx.strokeStyle =
+        "rgba(37,99,235,.9)";
+
+      ctx.lineWidth =
+        Math.max(
+          2,
+          canvas.width / 300
+        );
+
+      ctx.setLineDash([8, 6]);
+
+      ctx.strokeRect(
+        fx,
+        fy,
+        fw,
+        fh
+      );
+
+      ctx.restore();
+
+    }
+
+  }
+
+}
+
+
+// ------------------------------------------------------------
+// RATIO CHANGE
+// ------------------------------------------------------------
+
+ratioSelect.addEventListener(
+  "change",
+  () => {
+
+    customDimensions.classList.toggle(
+      "hidden",
+      ratioSelect.value !== "custom"
+    );
+
+    calculateCrop();
+
+    render();
+
+  }
+);
+
+
+customWidth.addEventListener(
+  "input",
+  () => {
+
+    calculateCrop();
+
+    render();
+
+  }
+);
+
+
+customHeight.addEventListener(
+  "input",
+  () => {
+
+    calculateCrop();
+
+    render();
+
+  }
+);
+
+
+// ------------------------------------------------------------
+// VERTICAL POSITION
+// ------------------------------------------------------------
+
+verticalPosition.addEventListener(
+  "input",
+  () => {
+
+    verticalValue.textContent =
+      verticalPosition.value + "%";
+
+    calculateCrop();
+
+    render();
+
+  }
+);
+
+
+// ------------------------------------------------------------
+// ZOOM
+// ------------------------------------------------------------
+
+zoom.addEventListener(
+  "input",
+  () => {
+
+    zoomValue.textContent =
+      Number(zoom.value).toFixed(2)
+      + "×";
+
+    calculateCrop();
+
+    render();
+
+  }
+);
+
+
+// ------------------------------------------------------------
+// AUTO CROP
+// ------------------------------------------------------------
+
+autoCropButton.addEventListener(
+  "click",
+  async () => {
+
+    if (!image) {
+
+      status.textContent =
+        "Please select an image first.";
+
+      return;
+
+    }
+
+
+    userOffsetX = 0;
+
+    userOffsetY = 0;
+
+    verticalPosition.value = 50;
+
+    zoom.value = 1;
+
+    verticalValue.textContent = "50%";
+
+    zoomValue.textContent = "1.00×";
+
+
+    await detectFace();
+
+  }
+);
+
+
+// ------------------------------------------------------------
+// RESET
+// ------------------------------------------------------------
+
+resetButton.addEventListener(
+  "click",
+  () => {
+
+    userOffsetX = 0;
+
+    userOffsetY = 0;
+
+    verticalPosition.value = 50;
+
+    zoom.value = 1;
+
+    verticalValue.textContent = "50%";
+
+    zoomValue.textContent = "1.00×";
+
+
+    if (image) {
+
+      calculateCrop();
+
+      render();
+
+    }
+
+  }
+);
+
+
+// ------------------------------------------------------------
+// POINTER DRAG
+// ------------------------------------------------------------
+
+canvas.addEventListener(
+  "pointerdown",
+  event => {
+
+    if (!image) {
+      return;
+    }
+
+    dragging = true;
+
+    canvas.setPointerCapture(
+      event.pointerId
+    );
+
+    lastPointerX =
+      event.clientX;
+
+    lastPointerY =
+      event.clientY;
+
+  }
+);
+
+
+canvas.addEventListener(
+  "pointermove",
+  event => {
+
+    if (!dragging || !crop) {
+      return;
+    }
+
+
+    const dx =
+      event.clientX -
+      lastPointerX;
+
+
+    const dy =
+      event.clientY -
+      lastPointerY;
+
+
+    lastPointerX =
+      event.clientX;
+
+    lastPointerY =
+      event.clientY;
+
+
+    /*
+     * Convert displayed canvas movement
+     * back to source-image pixels.
+     */
+
+    const scaleX =
+      crop.width /
+      canvas.clientWidth;
+
+
+    const scaleY =
+      crop.height /
+      canvas.clientHeight;
+
+
+    userOffsetX +=
+      dx * scaleX;
+
+    userOffsetY +=
+      dy * scaleY;
+
+
+    calculateCrop();
+
+    render();
+
+  }
+);
+
+
+canvas.addEventListener(
+  "pointerup",
+  event => {
+
+    dragging = false;
+
+    try {
+
+      canvas.releasePointerCapture(
+        event.pointerId
+      );
+
+    } catch {}
+
+  }
+);
+
+
+canvas.addEventListener(
+  "pointercancel",
+  () => {
+
+    dragging = false;
+
+  }
+);
+
+
+// ------------------------------------------------------------
+// MOUSE WHEEL ZOOM
+// ------------------------------------------------------------
+
+canvas.addEventListener(
+  "wheel",
+  event => {
+
+    if (!image) {
+      return;
+    }
+
+    event.preventDefault();
+
+
+    const current =
+      Number(zoom.value);
+
+
+    const amount =
+      event.deltaY < 0
+        ? 0.05
+        : -0.05;
+
+
+    const next =
+      Math.max(
+        0.5,
+        Math.min(
+          3,
+          current + amount
+        )
+      );
+
+
+    zoom.value =
+      next;
+
+
+    zoomValue.textContent =
+      next.toFixed(2) + "×";
+
+
+    calculateCrop();
+
+    render();
+
+  },
+  {
+    passive: false
+  }
+);
+
+
+// ------------------------------------------------------------
+// DOWNLOAD
+// ------------------------------------------------------------
+
+downloadButton.addEventListener(
+  "click",
+  () => {
+
+    if (!image || !crop) {
+
+      status.textContent =
+        "Nothing to download.";
+
+      return;
+
+    }
+
+
+    /*
+     * Export at a higher resolution
+     * than the preview.
+     */
+
+    const aspect =
+      getAspectRatio();
+
+
+    const outputWidth =
+      ratioSelect.value === "custom"
+        ? Math.max(
+            1,
+            Number(customWidth.value) || 800
+          )
+        : 1200;
+
+
+    const outputHeight =
+      Math.round(
+        outputWidth / aspect
+      );
+
+
+    const output =
+      document.createElement("canvas");
+
+
+    output.width =
+      outputWidth;
+
+    output.height =
+      outputHeight;
+
+
+    const outputCtx =
+      output.getContext("2d");
+
+
+    outputCtx.imageSmoothingEnabled =
+      true;
+
+    outputCtx.imageSmoothingQuality =
+      "high";
+
+
+    outputCtx.drawImage(
+      image,
+
+      crop.x,
+      crop.y,
+      crop.width,
+      crop.height,
+
+      0,
+      0,
+      outputWidth,
+      outputHeight
+    );
+
+
+    output.toBlob(
+      blob => {
+
+        if (!blob) {
+
+          status.textContent =
+            "Could not create output.";
+
+          return;
+
+        }
+
+
+        const url =
+          URL.createObjectURL(blob);
+
+
+        const a =
+          document.createElement("a");
+
+
+        a.href = url;
+
+        a.download =
+          "face-crop.jpg";
+
+
+        document.body.appendChild(a);
+
+        a.click();
+
+        a.remove();
+
+
+        setTimeout(
+          () => URL.revokeObjectURL(url),
+          1000
+        );
+
+
+        status.textContent =
+          "Crop downloaded.";
+
+      },
+      "image/jpeg",
+      0.95
+    );
+
+  }
+);
+
+
+// ------------------------------------------------------------
+// INITIAL CANVAS
+// ------------------------------------------------------------
+
+ctx.fillStyle =
+  "#ffffff";
+
+ctx.fillRect(
+  0,
+  0,
+  canvas.width,
+  canvas.height
+);
+
+ctx.fillStyle =
+  "#777";
+
+ctx.textAlign =
+  "center";
+
+ctx.font =
+  "16px system-ui";
+
+ctx.fillText(
+  "Upload an image",
+  canvas.width / 2,
+  canvas.height / 2
+);
+
+</script>
+
+</body>
+</html>
