@@ -1,0 +1,5501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+>
+
+<title>Smart Face Cropper — Phase 2</title>
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: light dark;
+
+  --bg: #f3f5f7;
+  --panel: #ffffff;
+  --surface: #f8fafc;
+
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #d8dee7;
+
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+
+  --good: #15803d;
+  --good-bg: #dcfce7;
+
+  --warn: #b45309;
+  --warn-bg: #fef3c7;
+
+  --bad: #b91c1c;
+  --bad-bg: #fee2e2;
+}
+
+@media (prefers-color-scheme: dark) {
+
+  :root {
+    --bg: #0f1115;
+    --panel: #181b21;
+    --surface: #20242b;
+
+    --text: #f3f4f6;
+    --muted: #9ca3af;
+    --border: #303641;
+
+    --good: #4ade80;
+    --good-bg: #12351f;
+
+    --warn: #fbbf24;
+    --warn-bg: #3b2d0b;
+
+    --bad: #f87171;
+    --bad-bg: #3d1515;
+  }
+
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app {
+  width: min(1200px, 100%);
+  margin: auto;
+  padding: 18px;
+}
+
+.header {
+  margin-bottom: 18px;
+}
+
+.header h1 {
+  margin: 0;
+
+  font-size: 25px;
+  line-height: 1.2;
+}
+
+.header p {
+  margin: 6px 0 0;
+
+  color: var(--muted);
+
+  font-size: 14px;
+}
+
+.layout {
+  display: grid;
+
+  grid-template-columns:
+    320px minmax(0, 1fr);
+
+  gap: 18px;
+
+  align-items: start;
+}
+
+.panel {
+  background: var(--panel);
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius: 14px;
+
+  padding: 16px;
+}
+
+.controls {
+  position: sticky;
+  top: 15px;
+}
+
+.group {
+  margin-bottom: 17px;
+}
+
+.label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.file-input {
+  width: 100%;
+
+  font-size: 13px;
+}
+
+select,
+input[type="number"] {
+  width: 100%;
+
+  min-height: 44px;
+
+  padding: 9px 11px;
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius: 9px;
+
+  background: var(--panel);
+  color: var(--text);
+
+  outline: none;
+}
+
+select:focus,
+input[type="number"]:focus {
+  border-color: var(--primary);
+}
+
+.dimensions {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 8px;
+}
+
+.range-line {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    58px;
+
+  gap: 10px;
+
+  align-items: center;
+}
+
+input[type="range"] {
+  width: 100%;
+
+  accent-color:
+    var(--primary);
+}
+
+.range-value {
+  color: var(--muted);
+
+  font-size: 13px;
+
+  text-align: right;
+}
+
+.button {
+  width: 100%;
+
+  min-height: 44px;
+
+  padding: 9px 12px;
+
+  border: 0;
+
+  border-radius: 9px;
+
+  background:
+    var(--primary);
+
+  color: white;
+
+  font-weight: 650;
+}
+
+.button:hover {
+  background:
+    var(--primary-hover);
+}
+
+.button.secondary {
+  margin-top: 8px;
+
+  background: transparent;
+
+  color: var(--text);
+
+  border:
+    1px solid
+    var(--border);
+}
+
+.button.secondary:hover {
+  background:
+    rgba(127,127,127,.08);
+}
+
+.button.camera {
+  margin-top: 8px;
+
+  background:
+    #111827;
+}
+
+.info {
+  padding: 11px;
+
+  margin-bottom: 14px;
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius: 9px;
+
+  background:
+    rgba(37,99,235,.06);
+
+  font-size: 12px;
+
+  line-height: 1.55;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.status {
+  min-height: 20px;
+
+  margin-top: 12px;
+
+  color: var(--muted);
+
+  font-size: 12px;
+
+  line-height: 1.4;
+}
+
+
+/* ============================================================
+   ADVANCED SETTINGS
+   ============================================================ */
+
+details.advanced {
+  margin-bottom: 14px;
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius: 10px;
+
+  overflow: hidden;
+}
+
+details.advanced summary {
+  padding: 11px;
+
+  background:
+    var(--surface);
+
+  cursor: pointer;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+.advanced-body {
+  padding: 12px;
+}
+
+
+/* ============================================================
+   FACE SELECTOR
+   ============================================================ */
+
+.face-selector {
+  margin-bottom: 14px;
+}
+
+.face-selector-title {
+  margin-bottom: 8px;
+
+  font-size: 12px;
+
+  color: var(--muted);
+}
+
+.face-list {
+  display: flex;
+
+  gap: 8px;
+
+  overflow-x: auto;
+
+  padding-bottom: 3px;
+}
+
+.face-card {
+  position: relative;
+
+  flex: 0 0 72px;
+
+  height: 88px;
+
+  padding: 3px;
+
+  border:
+    2px solid
+    var(--border);
+
+  border-radius: 8px;
+
+  background:
+    var(--surface);
+
+  overflow: hidden;
+}
+
+.face-card.selected {
+  border-color:
+    var(--primary);
+
+  box-shadow:
+    0 0 0 2px
+    rgba(37,99,235,.15);
+}
+
+.face-card canvas {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  border-radius: 5px;
+
+  box-shadow: none;
+}
+
+.face-number {
+  position: absolute;
+
+  left: 4px;
+  top: 4px;
+
+  width: 20px;
+  height: 20px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background:
+    rgba(0,0,0,.7);
+
+  color: white;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+
+/* ============================================================
+   VALIDATION
+   ============================================================ */
+
+.validation {
+  margin-bottom: 14px;
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius: 10px;
+
+  overflow: hidden;
+}
+
+.validation-header {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding: 10px 11px;
+
+  background:
+    var(--surface);
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+.validation-score {
+  padding: 3px 7px;
+
+  border-radius: 999px;
+
+  font-size: 11px;
+
+  font-weight: 700;
+}
+
+.score-good {
+  color: var(--good);
+  background: var(--good-bg);
+}
+
+.score-warn {
+  color: var(--warn);
+  background: var(--warn-bg);
+}
+
+.score-bad {
+  color: var(--bad);
+  background: var(--bad-bg);
+}
+
+.checks {
+  padding: 8px 11px;
+}
+
+.check {
+  display: grid;
+
+  grid-template-columns:
+    20px
+    minmax(0,1fr);
+
+  gap: 7px;
+
+  padding: 5px 0;
+
+  font-size: 11px;
+
+  line-height: 1.35;
+}
+
+.check-icon {
+  font-weight: 800;
+
+  text-align: center;
+}
+
+.check.good .check-icon {
+  color: var(--good);
+}
+
+.check.warn .check-icon {
+  color: var(--warn);
+}
+
+.check.bad .check-icon {
+  color: var(--bad);
+}
+
+
+/* ============================================================
+   PREVIEW
+   ============================================================ */
+
+.preview-panel {
+  min-width: 0;
+}
+
+.preview-toolbar {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 10px;
+}
+
+.preview-mode {
+  display: flex;
+
+  gap: 4px;
+
+  padding: 3px;
+
+  background:
+    var(--surface);
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius: 9px;
+}
+
+.mode-button {
+  padding: 7px 12px;
+
+  border: 0;
+
+  border-radius: 7px;
+
+  background: transparent;
+
+  color: var(--muted);
+
+  font-size: 12px;
+}
+
+.mode-button.active {
+  background:
+    var(--primary);
+
+  color: white;
+
+  font-weight: 650;
+}
+
+.reset-view {
+  padding: 7px 10px;
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius: 7px;
+
+  background: transparent;
+
+  color: var(--text);
+
+  font-size: 12px;
+}
+
+.canvas-area {
+  min-height: 600px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  border-radius: 12px;
+
+  overflow: hidden;
+
+  background-color: #e6e6e6;
+
+  background-image:
+    linear-gradient(
+      45deg,
+      #d4d4d4 25%,
+      transparent 25%
+    ),
+    linear-gradient(
+      -45deg,
+      #d4d4d4 25%,
+      transparent 25%
+    ),
+    linear-gradient(
+      45deg,
+      transparent 75%,
+      #d4d4d4 75%
+    ),
+    linear-gradient(
+      -45deg,
+      transparent 75%,
+      #d4d4d4 75%
+    );
+
+  background-size: 20px 20px;
+
+  background-position:
+    0 0,
+    0 10px,
+    10px -10px,
+    -10px 0;
+}
+
+canvas.main-canvas {
+  display: block;
+
+  max-width: 100%;
+  max-height: 78vh;
+
+  width: auto;
+  height: auto;
+
+  background: white;
+
+  border-radius: 4px;
+
+  box-shadow:
+    0 8px 35px
+    rgba(0,0,0,.2);
+
+  touch-action: none;
+
+  user-select: none;
+}
+
+.help {
+  margin-top: 10px;
+
+  color: var(--muted);
+
+  text-align: center;
+
+  font-size: 12px;
+}
+
+.result-details {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+
+  gap: 8px;
+
+  margin-top: 12px;
+}
+
+.stat {
+  padding: 10px;
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius: 8px;
+}
+
+.stat-title {
+  color: var(--muted);
+
+  font-size: 11px;
+}
+
+.stat-value {
+  margin-top: 3px;
+
+  font-size: 13px;
+
+  font-weight: 650;
+}
+
+
+/* ============================================================
+   CAMERA MODAL
+   ============================================================ */
+
+.modal {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 1000;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 16px;
+
+  background:
+    rgba(0,0,0,.75);
+}
+
+.modal-card {
+  width: min(650px,100%);
+
+  max-height:
+    calc(100vh - 32px);
+
+  overflow: auto;
+
+  padding: 14px;
+
+  background:
+    var(--panel);
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 20px 70px
+    rgba(0,0,0,.4);
+}
+
+.modal-header {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 10px;
+}
+
+.modal-header strong {
+  font-size: 15px;
+}
+
+.close-button {
+  width: 36px;
+  height: 36px;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  background:
+    var(--surface);
+
+  color: var(--text);
+
+  font-size: 20px;
+}
+
+.camera-wrap {
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 3 / 4;
+
+  overflow: hidden;
+
+  background: #000;
+
+  border-radius: 10px;
+}
+
+.camera-video {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+.camera-guide {
+  position: absolute;
+
+  inset: 8% 15% 8% 15%;
+
+  border:
+    2px solid
+    rgba(255,255,255,.75);
+
+  border-radius: 45% 45% 38% 38%;
+
+  pointer-events: none;
+}
+
+.camera-eye-line {
+  position: absolute;
+
+  left: 10%;
+  right: 10%;
+
+  top: 40%;
+
+  border-top:
+    1px dashed
+    rgba(255,255,255,.65);
+
+  pointer-events: none;
+}
+
+.camera-controls {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 8px;
+
+  margin-top: 10px;
+}
+
+.camera-note {
+  margin-top: 8px;
+
+  color: var(--muted);
+
+  font-size: 11px;
+
+  line-height: 1.4;
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width:900px) {
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .controls {
+    position: static;
+  }
+
+  .canvas-area {
+    min-height: 450px;
+  }
+
+  canvas.main-canvas {
+    max-height: 65vh;
+  }
+
+}
+
+@media (max-width:520px) {
+
+  .app {
+    padding: 10px;
+  }
+
+  .panel {
+    padding: 12px;
+
+    border-radius: 11px;
+  }
+
+  .canvas-area {
+    min-height: 370px;
+
+    padding: 12px;
+  }
+
+  .result-details {
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+  .preview-toolbar {
+    flex-wrap: wrap;
+  }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <header class="header">
+
+    <h1>
+      Smart Face Cropper
+    </h1>
+
+    <p>
+      Phase 2 — intelligent face selection, camera capture and advanced preview.
+    </p>
+
+  </header>
+
+
+  <div class="layout">
+
+
+    <!-- ======================================================
+         CONTROLS
+         ====================================================== -->
+
+    <section class="panel controls">
+
+
+      <!-- FILE -->
+
+      <div class="group">
+
+        <label
+          class="label"
+          for="imageInput"
+        >
+          Select image
+        </label>
+
+        <input
+          id="imageInput"
+          class="file-input"
+          type="file"
+          accept="image/*"
+        >
+
+        <button
+          id="cameraButton"
+          class="button camera"
+          type="button"
+        >
+          📷 Capture from Camera
+        </button>
+
+      </div>
+
+
+      <!-- RATIO -->
+
+      <div class="group">
+
+        <label
+          class="label"
+          for="ratioSelect"
+        >
+          Output dimension / ratio
+        </label>
+
+        <select id="ratioSelect">
+
+          <option value="35:45">
+            Passport — 35 × 45
+          </option>
+
+          <option value="1:1">
+            Square — 1 × 1
+          </option>
+
+          <option value="3:4">
+            Portrait — 3 × 4
+          </option>
+
+          <option value="4:5">
+            Portrait — 4 × 5
+          </option>
+
+          <option value="2:3">
+            Portrait — 2 × 3
+          </option>
+
+          <option value="16:9">
+            Landscape — 16 × 9
+          </option>
+
+          <option value="custom">
+            Custom
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- CUSTOM -->
+
+      <div
+        id="customDimensions"
+        class="group hidden"
+      >
+
+        <label class="label">
+          Custom output
+        </label>
+
+        <div class="dimensions">
+
+          <input
+            id="customWidth"
+            type="number"
+            min="1"
+            value="800"
+            placeholder="Width"
+          >
+
+          <input
+            id="customHeight"
+            type="number"
+            min="1"
+            value="1000"
+            placeholder="Height"
+          >
+
+        </div>
+
+      </div>
+
+
+      <!-- FACE SELECTOR -->
+
+      <div
+        id="faceSelector"
+        class="face-selector hidden"
+      >
+
+        <div class="face-selector-title">
+          Detected faces — tap a face to select
+        </div>
+
+        <div
+          id="faceList"
+          class="face-list"
+        ></div>
+
+      </div>
+
+
+      <!-- ADVANCED -->
+
+      <details class="advanced">
+
+        <summary>
+          Advanced crop settings
+        </summary>
+
+        <div class="advanced-body">
+
+
+          <!-- HEADROOM -->
+
+          <div class="group">
+
+            <label class="label">
+              Headroom
+            </label>
+
+            <div class="range-line">
+
+              <input
+                id="headroom"
+                type="range"
+                min="4"
+                max="20"
+                value="10"
+              >
+
+              <span
+                id="headroomValue"
+                class="range-value"
+              >
+                10%
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <!-- FACE SIZE -->
+
+          <div class="group">
+
+            <label class="label">
+              Face size
+            </label>
+
+            <div class="range-line">
+
+              <input
+                id="faceSize"
+                type="range"
+                min="30"
+                max="60"
+                value="45"
+              >
+
+              <span
+                id="faceSizeValue"
+                class="range-value"
+              >
+                45%
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <!-- EYE -->
+
+          <div class="group">
+
+            <label class="label">
+              Eye position
+            </label>
+
+            <div class="range-line">
+
+              <input
+                id="eyePosition"
+                type="range"
+                min="30"
+                max="50"
+                value="40"
+              >
+
+              <span
+                id="eyePositionValue"
+                class="range-value"
+              >
+                40%
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <!-- VERTICAL -->
+
+          <div class="group">
+
+            <label class="label">
+              Vertical adjustment
+            </label>
+
+            <div class="range-line">
+
+              <input
+                id="verticalPosition"
+                type="range"
+                min="-100"
+                max="100"
+                value="0"
+              >
+
+              <span
+                id="verticalValue"
+                class="range-value"
+              >
+                0
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <!-- ZOOM -->
+
+          <div class="group">
+
+            <label class="label">
+              Zoom
+            </label>
+
+            <div class="range-line">
+
+              <input
+                id="zoom"
+                type="range"
+                min="0.60"
+                max="2.50"
+                step="0.01"
+                value="1"
+              >
+
+              <span
+                id="zoomValue"
+                class="range-value"
+              >
+                1.00×
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </details>
+
+
+      <!-- INFO -->
+
+      <div
+        id="faceInfo"
+        class="info"
+      >
+        Select an image to start.
+      </div>
+
+
+      <!-- VALIDATION -->
+
+      <div
+        id="validation"
+        class="validation hidden"
+      >
+
+        <div class="validation-header">
+
+          <span>
+            Automatic crop validation
+          </span>
+
+          <span
+            id="validationScore"
+            class="validation-score"
+          >
+            —
+          </span>
+
+        </div>
+
+        <div
+          id="checks"
+          class="checks"
+        ></div>
+
+      </div>
+
+
+      <!-- ACTIONS -->
+
+      <button
+        id="autoCrop"
+        class="button"
+        type="button"
+      >
+        ✨ Auto Detect & Crop
+      </button>
+
+
+      <button
+        id="reset"
+        class="button secondary"
+        type="button"
+      >
+        Reset
+      </button>
+
+
+      <button
+        id="download"
+        class="button secondary"
+        type="button"
+      >
+        Download Crop
+      </button>
+
+
+      <div
+        id="status"
+        class="status"
+      >
+        Loading face detection model…
+      </div>
+
+    </section>
+
+
+    <!-- ======================================================
+         PREVIEW
+         ====================================================== -->
+
+    <section class="panel preview-panel">
+
+
+      <div class="preview-toolbar">
+
+        <div class="preview-mode">
+
+          <button
+            id="beforeButton"
+            class="mode-button"
+            type="button"
+          >
+            Before
+          </button>
+
+          <button
+            id="afterButton"
+            class="mode-button active"
+            type="button"
+          >
+            After
+          </button>
+
+        </div>
+
+
+        <button
+          id="resetView"
+          class="reset-view"
+          type="button"
+        >
+          Reset view
+        </button>
+
+      </div>
+
+
+      <div class="canvas-area">
+
+        <canvas
+          id="canvas"
+          class="main-canvas"
+          width="700"
+          height="900"
+        ></canvas>
+
+      </div>
+
+
+      <div class="help">
+        Drag to reposition • pinch/wheel to zoom • double-tap to reset
+      </div>
+
+
+      <div class="result-details">
+
+        <div class="stat">
+
+          <div class="stat-title">
+            Output
+          </div>
+
+          <div
+            id="outputSize"
+            class="stat-value"
+          >
+            —
+          </div>
+
+        </div>
+
+
+        <div class="stat">
+
+          <div class="stat-title">
+            Detection
+          </div>
+
+          <div
+            id="detectionStatus"
+            class="stat-value"
+          >
+            —
+          </div>
+
+        </div>
+
+
+        <div class="stat">
+
+          <div class="stat-title">
+            Crop status
+          </div>
+
+          <div
+            id="cropStatus"
+            class="stat-value"
+          >
+            —
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </div>
+
+</div>
+
+
+<!-- ==========================================================
+     CAMERA MODAL
+     ========================================================== -->
+
+<div
+  id="cameraModal"
+  class="modal hidden"
+>
+
+  <div class="modal-card">
+
+    <div class="modal-header">
+
+      <strong>
+        Capture photograph
+      </strong>
+
+      <button
+        id="closeCamera"
+        class="close-button"
+        type="button"
+      >
+        ×
+      </button>
+
+    </div>
+
+
+    <div class="camera-wrap">
+
+      <video
+        id="cameraVideo"
+        class="camera-video"
+        autoplay
+        playsinline
+        muted
+      ></video>
+
+      <div class="camera-guide"></div>
+
+      <div class="camera-eye-line"></div>
+
+    </div>
+
+
+    <div class="camera-controls">
+
+      <button
+        id="switchCamera"
+        class="button secondary"
+        type="button"
+      >
+        Switch Camera
+      </button>
+
+      <button
+        id="capturePhoto"
+        class="button"
+        type="button"
+      >
+        Capture
+      </button>
+
+    </div>
+
+
+    <div class="camera-note">
+      Camera access requires HTTPS or localhost.
+      The captured image is processed locally in this page.
+    </div>
+
+  </div>
+
+</div>
+
+
+<script type="module">
+
+/*
+ * ============================================================
+ * SMART FACE CROPPER — PHASE 2
+ * ============================================================
+ *
+ * Added over Phase 1:
+ *
+ * 1. Multiple face selection
+ * 2. Face selector thumbnails
+ * 3. Before / After preview
+ * 4. Advanced settings collapsible
+ * 5. Camera capture
+ * 6. Front/rear camera switching
+ * 7. Improved touch gestures
+ * 8. Double-tap reset
+ * 9. Selected-face persistence
+ *
+ * Phase 1 remains:
+ *
+ * - Face detection
+ * - Face landmarks
+ * - Eye line
+ * - Face size
+ * - Headroom
+ * - Chin clearance
+ * - Head safety estimate
+ * - Tilt detection
+ * - Crop validation
+ * - Automatic crop
+ * - Manual positioning
+ * - High quality export
+ *
+ * ============================================================
+ */
+
+
+/* ============================================================
+   MEDIAPIPE
+   ============================================================ */
+
+const MP_VERSION =
+  "1.0.1";
+
+
+let FaceLandmarker = null;
+
+let FilesetResolver = null;
+
+
+try {
+
+  const vision =
+    await import(
+      `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/+esm`
+    );
+
+
+  FaceLandmarker =
+    vision.FaceLandmarker;
+
+
+  FilesetResolver =
+    vision.FilesetResolver;
+
+} catch (error) {
+
+  console.error(
+    "MediaPipe import error:",
+    error
+  );
+
+}
+
+
+/* ============================================================
+   DOM
+   ============================================================ */
+
+const imageInput =
+  document.getElementById("imageInput");
+
+const cameraButton =
+  document.getElementById("cameraButton");
+
+const cameraModal =
+  document.getElementById("cameraModal");
+
+const closeCamera =
+  document.getElementById("closeCamera");
+
+const cameraVideo =
+  document.getElementById("cameraVideo");
+
+const switchCamera =
+  document.getElementById("switchCamera");
+
+const capturePhoto =
+  document.getElementById("capturePhoto");
+
+const ratioSelect =
+  document.getElementById("ratioSelect");
+
+const customDimensions =
+  document.getElementById("customDimensions");
+
+const customWidth =
+  document.getElementById("customWidth");
+
+const customHeight =
+  document.getElementById("customHeight");
+
+const faceSelector =
+  document.getElementById("faceSelector");
+
+const faceList =
+  document.getElementById("faceList");
+
+const headroom =
+  document.getElementById("headroom");
+
+const faceSize =
+  document.getElementById("faceSize");
+
+const eyePosition =
+  document.getElementById("eyePosition");
+
+const verticalPosition =
+  document.getElementById("verticalPosition");
+
+const zoom =
+  document.getElementById("zoom");
+
+const headroomValue =
+  document.getElementById("headroomValue");
+
+const faceSizeValue =
+  document.getElementById("faceSizeValue");
+
+const eyePositionValue =
+  document.getElementById("eyePositionValue");
+
+const verticalValue =
+  document.getElementById("verticalValue");
+
+const zoomValue =
+  document.getElementById("zoomValue");
+
+const faceInfo =
+  document.getElementById("faceInfo");
+
+const validation =
+  document.getElementById("validation");
+
+const validationScore =
+  document.getElementById("validationScore");
+
+const checksElement =
+  document.getElementById("checks");
+
+const autoCropButton =
+  document.getElementById("autoCrop");
+
+const resetButton =
+  document.getElementById("reset");
+
+const downloadButton =
+  document.getElementById("download");
+
+const resetViewButton =
+  document.getElementById("resetView");
+
+const beforeButton =
+  document.getElementById("beforeButton");
+
+const afterButton =
+  document.getElementById("afterButton");
+
+const canvas =
+  document.getElementById("canvas");
+
+const ctx =
+  canvas.getContext("2d");
+
+const status =
+  document.getElementById("status");
+
+const outputSize =
+  document.getElementById("outputSize");
+
+const detectionStatus =
+  document.getElementById("detectionStatus");
+
+const cropStatus =
+  document.getElementById("cropStatus");
+
+
+/* ============================================================
+   STATE
+   ============================================================ */
+
+let landmarker = null;
+
+let sourceImage = null;
+
+let sourceUrl = null;
+
+let faces = [];
+
+let selectedFaceIndex = -1;
+
+let face = null;
+
+let crop = null;
+
+let validationResult = null;
+
+let previewMode = "after";
+
+
+/*
+ * Manual image movement.
+ */
+
+let manualOffsetX = 0;
+
+let manualOffsetY = 0;
+
+
+/*
+ * Pointer dragging.
+ */
+
+let dragging = false;
+
+let lastPointerX = 0;
+
+let lastPointerY = 0;
+
+
+/*
+ * Touch pinch.
+ */
+
+let pinchDistance = null;
+
+let pinchStartZoom = 1;
+
+
+/*
+ * Double tap.
+ */
+
+let lastTapTime = 0;
+
+
+/*
+ * Camera.
+ */
+
+let cameraStream = null;
+
+let cameraFacingMode =
+  "user";
+
+
+/* ============================================================
+   DEFAULTS
+   ============================================================ */
+
+const DEFAULTS = {
+
+  headroom: 10,
+
+  faceSize: 45,
+
+  eyePosition: 40,
+
+  vertical: 0,
+
+  zoom: 1
+
+};
+
+
+/* ============================================================
+   VALIDATION RULES
+   ============================================================ */
+
+const RULES = {
+
+  eyeTolerance: 0.035,
+
+  faceSizeTolerance: 0.07,
+
+  minChinClearance: 0.04,
+
+  headSafetyTolerance: 0.005,
+
+  maxTiltDegrees: 8
+
+};
+
+
+/* ============================================================
+   INITIALIZE MEDIAPIPE
+   ============================================================ */
+
+async function initializeFaceLandmarker() {
+
+  try {
+
+    if (
+      !FaceLandmarker ||
+      !FilesetResolver
+    ) {
+
+      throw new Error(
+        "MediaPipe unavailable."
+      );
+
+    }
+
+
+    status.textContent =
+      "Loading face detection model…";
+
+
+    const fileset =
+      await FilesetResolver.forVisionTasks(
+        `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/wasm`
+      );
+
+
+    landmarker =
+      await FaceLandmarker.createFromOptions(
+        fileset,
+        {
+
+          baseOptions: {
+
+            modelAssetPath:
+              "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+
+            delegate: "GPU"
+
+          },
+
+          runningMode: "IMAGE",
+
+          numFaces: 10,
+
+          minFaceDetectionConfidence: 0.5,
+
+          minFacePresenceConfidence: 0.5,
+
+          minTrackingConfidence: 0.5,
+
+          outputFaceBlendshapes: false,
+
+          outputFacialTransformationMatrixes: false
+
+        }
+      );
+
+
+    status.textContent =
+      "Face detection ready.";
+
+  } catch (error) {
+
+    console.error(error);
+
+    status.textContent =
+      "Could not load face detection model.";
+
+  }
+
+}
+
+
+initializeFaceLandmarker();
+
+
+/* ============================================================
+   IMAGE LOAD
+   ============================================================ */
+
+imageInput.addEventListener(
+  "change",
+  () => {
+
+    const file =
+      imageInput.files?.[0];
+
+
+    if (!file) {
+      return;
+    }
+
+
+    loadImageFile(file);
+
+  }
+);
+
+
+/* ============================================================
+   LOAD IMAGE FILE
+   ============================================================ */
+
+function loadImageFile(file) {
+
+  if (
+    !file.type.startsWith("image/")
+  ) {
+
+    status.textContent =
+      "Please select an image.";
+
+    return;
+
+  }
+
+
+  if (sourceUrl) {
+
+    URL.revokeObjectURL(
+      sourceUrl
+    );
+
+  }
+
+
+  sourceUrl =
+    URL.createObjectURL(file);
+
+
+  const image =
+    new Image();
+
+
+  image.onload =
+    async () => {
+
+      sourceImage =
+        image;
+
+
+      faces = [];
+
+      face = null;
+
+      selectedFaceIndex = -1;
+
+      crop = null;
+
+      validationResult = null;
+
+      manualOffsetX = 0;
+
+      manualOffsetY = 0;
+
+
+      previewMode =
+        "after";
+
+
+      updatePreviewButtons();
+
+
+      resetControls();
+
+
+      validation.classList.add(
+        "hidden"
+      );
+
+
+      faceSelector.classList.add(
+        "hidden"
+      );
+
+
+      faceInfo.innerHTML =
+        `
+          <strong>Image loaded</strong><br>
+          ${image.naturalWidth} × ${image.naturalHeight}px<br>
+          Detecting faces…
+        `;
+
+
+      status.textContent =
+        "Analyzing image…";
+
+
+      await detectFaces();
+
+    };
+
+
+  image.onerror =
+    () => {
+
+      status.textContent =
+        "Could not load image.";
+
+    };
+
+
+  image.src =
+    sourceUrl;
+
+}
+
+
+/* ============================================================
+   DETECT FACES
+   ============================================================ */
+
+async function detectFaces() {
+
+  if (!sourceImage) {
+    return;
+  }
+
+
+  if (!landmarker) {
+
+    status.textContent =
+      "Face detection model is not ready.";
+
+    return;
+
+  }
+
+
+  try {
+
+    const result =
+      landmarker.detect(
+        sourceImage
+      );
+
+
+    const landmarksList =
+      result.faceLandmarks || [];
+
+
+    faces =
+      landmarksList
+        .map(
+          calculateFaceGeometry
+        )
+        .filter(Boolean);
+
+
+    /*
+     * Largest face first.
+     */
+
+    faces.sort(
+      (a, b) =>
+        (
+          b.width *
+          b.height
+        ) -
+        (
+          a.width *
+          a.height
+        )
+    );
+
+
+    if (
+      faces.length === 0
+    ) {
+
+      face = null;
+
+      selectedFaceIndex = -1;
+
+      crop = null;
+
+
+      detectionStatus.textContent =
+        "No face";
+
+
+      cropStatus.textContent =
+        "Manual";
+
+
+      faceInfo.innerHTML =
+        `
+          <strong>No face detected</strong><br>
+          Manual cropping is still available.
+        `;
+
+
+      validation.classList.add(
+        "hidden"
+      );
+
+
+      faceSelector.classList.add(
+        "hidden"
+      );
+
+
+      status.textContent =
+        "No face detected.";
+
+
+      render();
+
+      return;
+
+    }
+
+
+    /*
+     * Select largest face automatically.
+     */
+
+    selectedFaceIndex = 0;
+
+    face =
+      faces[0];
+
+
+    renderFaceSelector();
+
+    updateFaceInfo();
+
+
+    manualOffsetX = 0;
+
+    manualOffsetY = 0;
+
+
+    calculateCrop();
+
+    render();
+
+
+    status.textContent =
+      faces.length === 1
+        ? "1 face detected."
+        : `${faces.length} faces detected. Largest face selected.`;
+
+  } catch (error) {
+
+    console.error(
+      "Face detection failed:",
+      error
+    );
+
+
+    status.textContent =
+      "Face detection failed.";
+
+  }
+
+}
+
+
+/* ============================================================
+   FACE GEOMETRY
+   ============================================================ */
+
+function calculateFaceGeometry(
+  landmarks
+) {
+
+  if (
+    !landmarks ||
+    !landmarks.length
+  ) {
+
+    return null;
+
+  }
+
+
+  const imageWidth =
+    sourceImage.naturalWidth;
+
+  const imageHeight =
+    sourceImage.naturalHeight;
+
+
+  const points =
+    landmarks.map(
+      point => ({
+
+        x:
+          point.x *
+          imageWidth,
+
+        y:
+          point.y *
+          imageHeight
+
+      })
+    );
+
+
+  const minX =
+    Math.min(
+      ...points.map(
+        p => p.x
+      )
+    );
+
+
+  const maxX =
+    Math.max(
+      ...points.map(
+        p => p.x
+      )
+    );
+
+
+  const minY =
+    Math.min(
+      ...points.map(
+        p => p.y
+      )
+    );
+
+
+  const maxY =
+    Math.max(
+      ...points.map(
+        p => p.y
+      )
+    );
+
+
+  const width =
+    maxX - minX;
+
+  const height =
+    maxY - minY;
+
+
+  const leftEye =
+    points[33];
+
+  const rightEye =
+    points[263];
+
+
+  let eyeLineY;
+
+  let eyeCenterX;
+
+
+  if (
+    leftEye &&
+    rightEye
+  ) {
+
+    eyeLineY =
+      (
+        leftEye.y +
+        rightEye.y
+      ) / 2;
+
+
+    eyeCenterX =
+      (
+        leftEye.x +
+        rightEye.x
+      ) / 2;
+
+  } else {
+
+    eyeLineY =
+      minY +
+      height * 0.38;
+
+
+    eyeCenterX =
+      minX +
+      width / 2;
+
+  }
+
+
+  let rollDegrees = 0;
+
+
+  if (
+    leftEye &&
+    rightEye
+  ) {
+
+    rollDegrees =
+      Math.atan2(
+        rightEye.y -
+        leftEye.y,
+
+        rightEye.x -
+        leftEye.x
+      ) *
+      180 /
+      Math.PI;
+
+  }
+
+
+  const chin =
+    points[152];
+
+
+  const chinY =
+    chin
+      ? chin.y
+      : maxY;
+
+
+  const nose =
+    points[1];
+
+
+  const noseY =
+    nose
+      ? nose.y
+      : minY +
+        height * 0.55;
+
+
+  /*
+   * Conservative head boundary.
+   */
+
+  const headTop =
+    Math.max(
+      0,
+
+      minY -
+      height * 0.22
+    );
+
+
+  const headLeft =
+    Math.max(
+      0,
+
+      minX -
+      width * 0.08
+    );
+
+
+  const headRight =
+    Math.min(
+      imageWidth,
+
+      maxX +
+      width * 0.08
+    );
+
+
+  return {
+
+    x: minX,
+
+    y: minY,
+
+    width,
+
+    height,
+
+    centerX:
+      (
+        minX +
+        maxX
+      ) / 2,
+
+    centerY:
+      (
+        minY +
+        maxY
+      ) / 2,
+
+    eyeLineY,
+
+    eyeCenterX,
+
+    chinY,
+
+    noseY,
+
+    rollDegrees,
+
+    headTop,
+
+    headLeft,
+
+    headRight,
+
+    landmarks: points
+
+  };
+
+}
+
+
+/* ============================================================
+   FACE SELECTOR
+   ============================================================ */
+
+function renderFaceSelector() {
+
+  if (
+    faces.length <= 1
+  ) {
+
+    faceSelector.classList.add(
+      "hidden"
+    );
+
+    return;
+
+  }
+
+
+  faceSelector.classList.remove(
+    "hidden"
+  );
+
+
+  faceList.innerHTML =
+    "";
+
+
+  faces.forEach(
+    (faceData, index) => {
+
+      const card =
+        document.createElement(
+          "button"
+        );
+
+
+      card.type =
+        "button";
+
+
+      card.className =
+        "face-card";
+
+
+      if (
+        index ===
+        selectedFaceIndex
+      ) {
+
+        card.classList.add(
+          "selected"
+        );
+
+      }
+
+
+      const thumbnail =
+        document.createElement(
+          "canvas"
+        );
+
+
+      thumbnail.width =
+        70;
+
+      thumbnail.height =
+        84;
+
+
+      drawFaceThumbnail(
+        thumbnail,
+        faceData
+      );
+
+
+      const number =
+        document.createElement(
+          "span"
+        );
+
+
+      number.className =
+        "face-number";
+
+
+      number.textContent =
+        String(
+          index + 1
+        );
+
+
+      card.append(
+        thumbnail,
+        number
+      );
+
+
+      card.addEventListener(
+        "click",
+        () => {
+
+          selectFace(index);
+
+        }
+      );
+
+
+      faceList.appendChild(
+        card
+      );
+
+    }
+  );
+
+}
+
+
+/* ============================================================
+   FACE THUMBNAIL
+   ============================================================ */
+
+function drawFaceThumbnail(
+  thumbnail,
+  faceData
+) {
+
+  const context =
+    thumbnail.getContext(
+      "2d"
+    );
+
+
+  context.fillStyle =
+    "#e5e7eb";
+
+
+  context.fillRect(
+    0,
+    0,
+    thumbnail.width,
+    thumbnail.height
+  );
+
+
+  /*
+   * Give the thumbnail some surrounding area.
+   */
+
+  const padding =
+    faceData.height *
+    0.45;
+
+
+  let x =
+    faceData.headLeft -
+    padding;
+
+
+  let y =
+    faceData.headTop -
+    padding * 0.5;
+
+
+  let width =
+    (
+      faceData.headRight -
+      faceData.headLeft
+    ) +
+    padding * 2;
+
+
+  let height =
+    faceData.chinY -
+    faceData.headTop +
+    padding;
+
+
+  /*
+   * Clamp.
+
+   */
+
+  x =
+    Math.max(
+      0,
+      x
+    );
+
+
+  y =
+    Math.max(
+      0,
+      y
+    );
+
+
+  width =
+    Math.min(
+      sourceImage.naturalWidth - x,
+      width
+    );
+
+
+  height =
+    Math.min(
+      sourceImage.naturalHeight - y,
+      height
+    );
+
+
+  if (
+    width <= 0 ||
+    height <= 0
+  ) {
+
+    return;
+
+  }
+
+
+  context.drawImage(
+
+    sourceImage,
+
+    x,
+    y,
+    width,
+    height,
+
+    0,
+    0,
+    thumbnail.width,
+    thumbnail.height
+
+  );
+
+}
+
+
+/* ============================================================
+   SELECT FACE
+   ============================================================ */
+
+function selectFace(index) {
+
+  if (
+    !faces[index]
+  ) {
+
+    return;
+
+  }
+
+
+  selectedFaceIndex =
+    index;
+
+
+  face =
+    faces[index];
+
+
+  manualOffsetX =
+    0;
+
+  manualOffsetY =
+    0;
+
+
+  renderFaceSelector();
+
+  updateFaceInfo();
+
+  calculateCrop();
+
+  render();
+
+
+  status.textContent =
+    `Face ${index + 1} selected.`;
+
+}
+
+
+/* ============================================================
+   FACE INFO
+   ============================================================ */
+
+function updateFaceInfo() {
+
+  if (!face) {
+
+    faceInfo.innerHTML =
+      "No face selected.";
+
+    return;
+
+  }
+
+
+  faceInfo.innerHTML =
+    `
+      <strong>Face ${selectedFaceIndex + 1} selected</strong><br>
+      Faces found: ${faces.length}<br>
+      Face size: ${Math.round(face.width)} × ${Math.round(face.height)}px<br>
+      Eye line: ${Math.round(face.eyeLineY)}px<br>
+      Head tilt: ${face.rollDegrees.toFixed(1)}°
+    `;
+
+
+  detectionStatus.textContent =
+    faces.length === 1
+      ? "1 face"
+      : `${faces.length} faces`;
+
+}
+
+
+/* ============================================================
+   ASPECT RATIO
+   ============================================================ */
+
+function getAspectRatio() {
+
+  if (
+    ratioSelect.value === "custom"
+  ) {
+
+    const width =
+      Math.max(
+        1,
+        Number(customWidth.value) || 1
+      );
+
+
+    const height =
+      Math.max(
+        1,
+        Number(customHeight.value) || 1
+      );
+
+
+    return width / height;
+
+  }
+
+
+  const parts =
+    ratioSelect.value
+      .split(":")
+      .map(Number);
+
+
+  return (
+    (parts[0] || 1) /
+    (parts[1] || 1)
+  );
+
+}
+
+
+/* ============================================================
+   OUTPUT SIZE
+   ============================================================ */
+
+function getOutputSize() {
+
+  if (
+    ratioSelect.value === "custom"
+  ) {
+
+    return {
+
+      width:
+        Math.max(
+          1,
+          Math.round(
+            Number(
+              customWidth.value
+            ) || 800
+          )
+        ),
+
+      height:
+        Math.max(
+          1,
+          Math.round(
+            Number(
+              customHeight.value
+            ) || 1000
+          )
+        )
+
+    };
+
+  }
+
+
+  const height =
+    900;
+
+
+  return {
+
+    width:
+      Math.round(
+        height *
+        getAspectRatio()
+      ),
+
+    height
+
+  };
+
+}
+
+
+/* ============================================================
+   SMART CROP
+   ============================================================ */
+
+function calculateCrop() {
+
+  if (!sourceImage) {
+    return;
+  }
+
+
+  const imageWidth =
+    sourceImage.naturalWidth;
+
+  const imageHeight =
+    sourceImage.naturalHeight;
+
+
+  const aspect =
+    getAspectRatio();
+
+
+  const faceFraction =
+    Number(
+      faceSize.value
+    ) / 100;
+
+
+  const eyeFraction =
+    Number(
+      eyePosition.value
+    ) / 100;
+
+
+  const headroomFraction =
+    Number(
+      headroom.value
+    ) / 100;
+
+
+  let cropHeight;
+
+
+  if (face) {
+
+    const heightForFace =
+      face.height /
+      faceFraction;
+
+
+    let heightForHeadroom =
+      0;
+
+
+    const denominator =
+      eyeFraction -
+      headroomFraction;
+
+
+    if (
+      denominator > 0
+    ) {
+
+      const eyeToHead =
+        Math.max(
+          0,
+
+          face.eyeLineY -
+          face.headTop
+        );
+
+
+      heightForHeadroom =
+        eyeToHead /
+        denominator;
+
+    }
+
+
+    const minBottomClearance =
+      0.05;
+
+
+    const eyeToChin =
+      Math.max(
+        0,
+
+        face.chinY -
+        face.eyeLineY
+      );
+
+
+    const availableEyeFraction =
+      1 -
+      eyeFraction -
+      minBottomClearance;
+
+
+    let heightForChin =
+      0;
+
+
+    if (
+      availableEyeFraction > 0
+    ) {
+
+      heightForChin =
+        eyeToChin /
+        availableEyeFraction;
+
+    }
+
+
+    cropHeight =
+      Math.max(
+        heightForFace,
+        heightForHeadroom,
+        heightForChin
+      );
+
+  } else {
+
+    cropHeight =
+      imageHeight *
+      0.70;
+
+  }
+
+
+  let cropWidth =
+    cropHeight *
+    aspect;
+
+
+  /*
+   * Fit into source image.
+   */
+
+  if (
+    cropWidth >
+    imageWidth
+  ) {
+
+    cropWidth =
+      imageWidth;
+
+    cropHeight =
+      cropWidth /
+      aspect;
+
+  }
+
+
+  if (
+    cropHeight >
+    imageHeight
+  ) {
+
+    cropHeight =
+      imageHeight;
+
+    cropWidth =
+      cropHeight *
+      aspect;
+
+  }
+
+
+  /*
+   * Zoom.
+   */
+
+  const zoomFactor =
+    Number(
+      zoom.value
+    );
+
+
+  cropWidth /=
+    zoomFactor;
+
+
+  cropHeight /=
+    zoomFactor;
+
+
+  cropWidth =
+    Math.min(
+      imageWidth,
+      cropWidth
+    );
+
+
+  cropHeight =
+    Math.min(
+      imageHeight,
+      cropHeight
+    );
+
+
+  /*
+   * Position.
+   */
+
+  let centerX =
+    imageWidth / 2;
+
+
+  let cropTop;
+
+
+  if (face) {
+
+    centerX =
+      face.eyeCenterX;
+
+
+    cropTop =
+      face.eyeLineY -
+      cropHeight *
+      eyeFraction;
+
+
+    const vertical =
+      Number(
+        verticalPosition.value
+      ) / 100;
+
+
+    cropTop +=
+      vertical *
+      cropHeight *
+      0.35;
+
+  } else {
+
+    cropTop =
+      (
+        imageHeight -
+        cropHeight
+      ) / 2;
+
+  }
+
+
+  let centerY =
+    cropTop +
+    cropHeight / 2;
+
+
+  centerX +=
+    manualOffsetX;
+
+
+  centerY +=
+    manualOffsetY;
+
+
+  let x =
+    centerX -
+    cropWidth / 2;
+
+
+  let y =
+    centerY -
+    cropHeight / 2;
+
+
+  /*
+   * Clamp.
+   */
+
+  x =
+    Math.max(
+      0,
+
+      Math.min(
+        x,
+        imageWidth -
+        cropWidth
+      )
+    );
+
+
+  y =
+    Math.max(
+      0,
+
+      Math.min(
+        y,
+        imageHeight -
+        cropHeight
+      )
+    );
+
+
+  crop = {
+
+    x,
+
+    y,
+
+    width:
+      cropWidth,
+
+    height:
+      cropHeight
+
+  };
+
+
+  validationResult =
+    validateCrop();
+
+
+  renderValidation();
+
+  updateOutputInfo();
+
+}
+
+
+/* ============================================================
+   VALIDATION
+   ============================================================ */
+
+function validateCrop() {
+
+  if (
+    !sourceImage ||
+    !crop
+  ) {
+
+    return null;
+
+  }
+
+
+  const result = {
+
+    checks: [],
+
+    score: 0,
+
+    good: 0,
+
+    warnings: 0,
+
+    bad: 0
+
+  };
+
+
+  if (!face) {
+
+    result.checks.push({
+
+      type: "warn",
+
+      text:
+        "No face selected. Automatic validation is limited."
+
+    });
+
+
+    result.warnings++;
+
+    return result;
+
+  }
+
+
+  const cropRight =
+    crop.x +
+    crop.width;
+
+
+  const cropBottom =
+    crop.y +
+    crop.height;
+
+
+  /*
+   * Head horizontal.
+   */
+
+  if (
+    face.headLeft >= crop.x &&
+    face.headRight <= cropRight
+  ) {
+
+    result.checks.push({
+
+      type: "good",
+
+      text:
+        "Head is horizontally inside the crop."
+
+    });
+
+
+    result.good++;
+
+  } else {
+
+    result.checks.push({
+
+      type: "bad",
+
+      text:
+        "Head is too close to a horizontal crop edge."
+
+    });
+
+
+    result.bad++;
+
+  }
+
+
+  /*
+   * Headroom.
+   */
+
+  const actualHeadroom =
+    (
+      face.headTop -
+      crop.y
+    ) /
+    crop.height;
+
+
+  const desiredHeadroom =
+    Number(
+      headroom.value
+    ) / 100;
+
+
+  if (
+    actualHeadroom >=
+    desiredHeadroom -
+    RULES.headSafetyTolerance
+  ) {
+
+    result.checks.push({
+
+      type: "good",
+
+      text:
+        `Headroom ${Math.round(actualHeadroom * 100)}% — acceptable.`
+
+    });
+
+
+    result.good++;
+
+  } else if (
+    actualHeadroom >=
+    desiredHeadroom * 0.65
+  ) {
+
+    result.checks.push({
+
+      type: "warn",
+
+      text:
+        `Headroom ${Math.round(actualHeadroom * 100)}% — slightly tight.`
+
+    });
+
+
+    result.warnings++;
+
+  } else {
+
+    result.checks.push({
+
+      type: "bad",
+
+      text:
+        "Head is too close to the top edge."
+
+    });
+
+
+    result.bad++;
+
+  }
+
+
+  /*
+   * Eye position.
+   */
+
+  const actualEyePosition =
+    (
+      face.eyeLineY -
+      crop.y
+    ) /
+    crop.height;
+
+
+  const desiredEyePosition =
+    Number(
+      eyePosition.value
+    ) / 100;
+
+
+  const eyeDifference =
+    Math.abs(
+      actualEyePosition -
+      desiredEyePosition
+    );
+
+
+  if (
+    eyeDifference <=
+    RULES.eyeTolerance
+  ) {
+
+    result.checks.push({
+
+      type: "good",
+
+      text:
+        `Eye line ${Math.round(actualEyePosition * 100)}% — correct.`
+
+    });
+
+
+    result.good++;
+
+  } else if (
+    eyeDifference <=
+    RULES.eyeTolerance * 2.2
+  ) {
+
+    result.checks.push({
+
+      type: "warn",
+
+      text:
+        `Eye line ${Math.round(actualEyePosition * 100)}% — slightly off.`
+
+    });
+
+
+    result.warnings++;
+
+  } else {
+
+    result.checks.push({
+
+      type: "bad",
+
+      text:
+        "Eye line is significantly off target."
+
+    });
+
+
+    result.bad++;
+
+  }
+
+
+  /*
+   * Face size.
+   */
+
+  const actualFaceSize =
+    face.height /
+    crop.height;
+
+
+  const desiredFaceSize =
+    Number(
+      faceSize.value
+    ) / 100;
+
+
+  const faceDifference =
+    Math.abs(
+      actualFaceSize -
+      desiredFaceSize
+    );
+
+
+  if (
+    faceDifference <=
+    RULES.faceSizeTolerance
+  ) {
+
+    result.checks.push({
+
+      type: "good",
+
+      text:
+        `Face occupies ${Math.round(actualFaceSize * 100)}% — correct.`
+
+    });
+
+
+    result.good++;
+
+  } else if (
+    faceDifference <=
+    RULES.faceSizeTolerance * 1.8
+  ) {
+
+    result.checks.push({
+
+      type: "warn",
+
+      text:
+        `Face occupies ${Math.round(actualFaceSize * 100)}% — slightly different.`
+
+    });
+
+
+    result.warnings++;
+
+  } else {
+
+    result.checks.push({
+
+      type: "bad",
+
+      text:
+        "Face size is outside the target range."
+
+    });
+
+
+    result.bad++;
+
+  }
+
+
+  /*
+   * Chin.
+   */
+
+  const chinPosition =
+    (
+      face.chinY -
+      crop.y
+    ) /
+    crop.height;
+
+
+  const chinClearance =
+    1 -
+    chinPosition;
+
+
+  if (
+    chinClearance >=
+    RULES.minChinClearance
+  ) {
+
+    result.checks.push({
+
+      type: "good",
+
+      text:
+        `Chin clearance ${Math.round(chinClearance * 100)}% — sufficient.`
+
+    });
+
+
+    result.good++;
+
+  } else {
+
+    result.checks.push({
+
+      type: "bad",
+
+      text:
+        "Chin is too close to the bottom edge."
+
+    });
+
+
+    result.bad++;
+
+  }
+
+
+  /*
+   * Tilt.
+   */
+
+  const tilt =
+    Math.abs(
+      face.rollDegrees
+    );
+
+
+  if (
+    tilt <=
+    RULES.maxTiltDegrees
+  ) {
+
+    result.checks.push({
+
+      type: "good",
+
+      text:
+        `Head tilt ${tilt.toFixed(1)}° — acceptable.`
+
+    });
+
+
+    result.good++;
+
+  } else if (
+    tilt <=
+    RULES.maxTiltDegrees * 1.8
+  ) {
+
+    result.checks.push({
+
+      type: "warn",
+
+      text:
+        `Head tilt ${tilt.toFixed(1)}° — slightly tilted.`
+
+    });
+
+
+    result.warnings++;
+
+  } else {
+
+    result.checks.push({
+
+      type: "bad",
+
+      text:
+        `Head tilt ${tilt.toFixed(1)}° — too much.`
+
+    });
+
+
+    result.bad++;
+
+  }
+
+
+  /*
+   * Lower portrait safety.
+   */
+
+  const estimatedShoulderLine =
+    face.chinY +
+    face.height *
+    0.55;
+
+
+  const shoulderPosition =
+    (
+      estimatedShoulderLine -
+      crop.y
+    ) /
+    crop.height;
+
+
+  if (
+    shoulderPosition <=
+    0.96
+  ) {
+
+    result.checks.push({
+
+      type: "good",
+
+      text:
+        "Lower portrait area has reasonable clearance."
+
+    });
+
+
+    result.good++;
+
+  } else {
+
+    result.checks.push({
+
+      type: "warn",
+
+      text:
+        "Lower portrait area is tight."
+
+    });
+
+
+    result.warnings++;
+
+  }
+
+
+  const total =
+    result.good +
+    result.warnings +
+    result.bad;
+
+
+  if (total) {
+
+    result.score =
+      Math.round(
+        (
+          result.good +
+          result.warnings * 0.5
+        ) /
+        total *
+        100
+      );
+
+  }
+
+
+  return result;
+
+}
+
+
+/* ============================================================
+   VALIDATION UI
+   ============================================================ */
+
+function renderValidation() {
+
+  if (!validationResult) {
+
+    validation.classList.add(
+      "hidden"
+    );
+
+    cropStatus.textContent =
+      "—";
+
+    return;
+
+  }
+
+
+  validation.classList.remove(
+    "hidden"
+  );
+
+
+  checksElement.innerHTML =
+    "";
+
+
+  validationResult.checks.forEach(
+    item => {
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+
+      row.className =
+        `check ${item.type}`;
+
+
+      const icon =
+        document.createElement(
+          "div"
+        );
+
+
+      icon.className =
+        "check-icon";
+
+
+      icon.textContent =
+        item.type === "good"
+          ? "✓"
+          : item.type === "warn"
+            ? "!"
+            : "×";
+
+
+      const text =
+        document.createElement(
+          "div"
+        );
+
+
+      text.textContent =
+        item.text;
+
+
+      row.append(
+        icon,
+        text
+      );
+
+
+      checksElement.appendChild(
+        row
+      );
+
+    }
+  );
+
+
+  validationScore.textContent =
+    `${validationResult.score}%`;
+
+
+  validationScore.className =
+    "validation-score";
+
+
+  if (
+    validationResult.bad === 0 &&
+    validationResult.warnings <= 1
+  ) {
+
+    validationScore.classList.add(
+      "score-good"
+    );
+
+
+    cropStatus.textContent =
+      "Good";
+
+  } else if (
+    validationResult.bad <= 1
+  ) {
+
+    validationScore.classList.add(
+      "score-warn"
+    );
+
+
+    cropStatus.textContent =
+      "Review";
+
+  } else {
+
+    validationScore.classList.add(
+      "score-bad"
+    );
+
+
+    cropStatus.textContent =
+      "Needs adjustment";
+
+  }
+
+}
+
+
+/* ============================================================
+   CANVAS PREPARATION
+   ============================================================ */
+
+function prepareCanvas() {
+
+  const aspect =
+    getAspectRatio();
+
+
+  const maxDimension =
+    900;
+
+
+  let width;
+  let height;
+
+
+  if (
+    aspect >= 1
+  ) {
+
+    width =
+      maxDimension;
+
+
+    height =
+      Math.round(
+        width /
+        aspect
+      );
+
+  } else {
+
+    height =
+      maxDimension;
+
+
+    width =
+      Math.round(
+        height *
+        aspect
+      );
+
+  }
+
+
+  canvas.width =
+    width;
+
+
+  canvas.height =
+    height;
+
+}
+
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+
+function render() {
+
+  if (!sourceImage) {
+
+    prepareCanvas();
+
+
+    ctx.fillStyle =
+      "#ffffff";
+
+
+    ctx.fillRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+
+    ctx.fillStyle =
+      "#777";
+
+
+    ctx.font =
+      "16px system-ui";
+
+
+    ctx.textAlign =
+      "center";
+
+
+    ctx.fillText(
+      "Upload an image",
+      canvas.width / 2,
+      canvas.height / 2
+    );
+
+
+    return;
+
+  }
+
+
+  /*
+   * BEFORE MODE
+   */
+
+  if (
+    previewMode === "before"
+  ) {
+
+    renderBefore();
+
+    return;
+
+  }
+
+
+  /*
+   * AFTER MODE
+   */
+
+  if (
+    !crop
+  ) {
+
+    prepareCanvas();
+
+    ctx.drawImage(
+      sourceImage,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    return;
+
+  }
+
+
+  renderAfter();
+
+}
+
+
+/* ============================================================
+   BEFORE PREVIEW
+   ============================================================ */
+
+function renderBefore() {
+
+  /*
+   * Preserve original aspect ratio.
+   */
+
+  const aspect =
+    sourceImage.naturalWidth /
+    sourceImage.naturalHeight;
+
+
+  let width =
+    900;
+
+
+  let height =
+    Math.round(
+      width /
+      aspect
+    );
+
+
+  if (
+    height > 900
+  ) {
+
+    height = 900;
+
+    width =
+      Math.round(
+        height *
+        aspect
+      );
+
+  }
+
+
+  canvas.width =
+    width;
+
+
+  canvas.height =
+    height;
+
+
+  ctx.clearRect(
+    0,
+    0,
+    width,
+    height
+  );
+
+
+  ctx.drawImage(
+
+    sourceImage,
+
+    0,
+    0,
+    width,
+    height
+
+  );
+
+
+  /*
+   * Draw detected faces.
+   */
+
+  faces.forEach(
+    (f, index) => {
+
+      const scaleX =
+        width /
+        sourceImage.naturalWidth;
+
+
+      const scaleY =
+        height /
+        sourceImage.naturalHeight;
+
+
+      const x =
+        f.headLeft *
+        scaleX;
+
+
+      const y =
+        f.headTop *
+        scaleY;
+
+
+      const w =
+        (
+          f.headRight -
+          f.headLeft
+        ) *
+        scaleX;
+
+
+      const h =
+        (
+          f.chinY -
+          f.headTop
+        ) *
+        scaleY;
+
+
+      ctx.save();
+
+
+      ctx.strokeStyle =
+        index ===
+        selectedFaceIndex
+          ? "#2563eb"
+          : "rgba(255,255,255,.8)";
+
+
+      ctx.lineWidth =
+        index ===
+        selectedFaceIndex
+          ? 4
+          : 2;
+
+
+      ctx.strokeRect(
+        x,
+        y,
+        w,
+        h
+      );
+
+
+      ctx.fillStyle =
+        index ===
+        selectedFaceIndex
+          ? "#2563eb"
+          : "rgba(0,0,0,.65)";
+
+
+      ctx.beginPath();
+
+      ctx.arc(
+        x + 15,
+        y + 15,
+        12,
+        0,
+        Math.PI * 2
+      );
+
+      ctx.fill();
+
+
+      ctx.fillStyle =
+        "#ffffff";
+
+
+      ctx.font =
+        "bold 11px system-ui";
+
+
+      ctx.textAlign =
+        "center";
+
+
+      ctx.textBaseline =
+        "middle";
+
+
+      ctx.fillText(
+        String(index + 1),
+        x + 15,
+        y + 15
+      );
+
+
+      ctx.restore();
+
+    }
+  );
+
+}
+
+
+/* ============================================================
+   AFTER PREVIEW
+   ============================================================ */
+
+function renderAfter() {
+
+  prepareCanvas();
+
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+
+  ctx.imageSmoothingEnabled =
+    true;
+
+
+  ctx.imageSmoothingQuality =
+    "high";
+
+
+  ctx.drawImage(
+
+    sourceImage,
+
+    crop.x,
+    crop.y,
+    crop.width,
+    crop.height,
+
+    0,
+    0,
+    canvas.width,
+    canvas.height
+
+  );
+
+
+  /*
+   * Eye line guide.
+   */
+
+  if (face) {
+
+    const eyeY =
+      (
+        face.eyeLineY -
+        crop.y
+      ) *
+      canvas.height /
+      crop.height;
+
+
+    if (
+      eyeY >= 0 &&
+      eyeY <= canvas.height
+    ) {
+
+      ctx.save();
+
+
+      ctx.strokeStyle =
+        "rgba(37,99,235,.55)";
+
+
+      ctx.lineWidth =
+        1.5;
+
+
+      ctx.setLineDash([
+        6,
+        6
+      ]);
+
+
+      ctx.beginPath();
+
+
+      ctx.moveTo(
+        0,
+        eyeY
+      );
+
+
+      ctx.lineTo(
+        canvas.width,
+        eyeY
+      );
+
+
+      ctx.stroke();
+
+
+      ctx.restore();
+
+    }
+
+
+    /*
+     * Head safety boundary.
+     */
+
+    const headX =
+      (
+        face.headLeft -
+        crop.x
+      ) *
+      canvas.width /
+      crop.width;
+
+
+    const headY =
+      (
+        face.headTop -
+        crop.y
+      ) *
+      canvas.height /
+      crop.height;
+
+
+    const headW =
+      (
+        face.headRight -
+        face.headLeft
+      ) *
+      canvas.width /
+      crop.width;
+
+
+    const headH =
+      (
+        face.chinY -
+        face.headTop
+      ) *
+      canvas.height /
+      crop.height;
+
+
+    ctx.save();
+
+
+    ctx.strokeStyle =
+      "rgba(21,128,61,.45)";
+
+
+    ctx.lineWidth =
+      1;
+
+
+    ctx.setLineDash([
+      4,
+      5
+    ]);
+
+
+    ctx.strokeRect(
+      headX,
+      headY,
+      headW,
+      headH
+    );
+
+
+    ctx.restore();
+
+  }
+
+}
+
+
+/* ============================================================
+   PREVIEW MODE
+   ============================================================ */
+
+beforeButton.addEventListener(
+  "click",
+  () => {
+
+    previewMode =
+      "before";
+
+
+    updatePreviewButtons();
+
+    render();
+
+  }
+);
+
+
+afterButton.addEventListener(
+  "click",
+  () => {
+
+    previewMode =
+      "after";
+
+
+    updatePreviewButtons();
+
+    render();
+
+  }
+);
+
+
+function updatePreviewButtons() {
+
+  beforeButton.classList.toggle(
+    "active",
+    previewMode === "before"
+  );
+
+
+  afterButton.classList.toggle(
+    "active",
+    previewMode === "after"
+  );
+
+}
+
+
+/* ============================================================
+   RATIO
+   ============================================================ */
+
+ratioSelect.addEventListener(
+  "change",
+  () => {
+
+    customDimensions.classList.toggle(
+      "hidden",
+      ratioSelect.value !== "custom"
+    );
+
+
+    calculateCrop();
+
+    render();
+
+  }
+);
+
+
+customWidth.addEventListener(
+  "input",
+  () => {
+
+    calculateCrop();
+
+    render();
+
+  }
+);
+
+
+customHeight.addEventListener(
+  "input",
+  () => {
+
+    calculateCrop();
+
+    render();
+
+  }
+);
+
+
+/* ============================================================
+   ADVANCED CONTROLS
+   ============================================================ */
+
+[
+  headroom,
+  faceSize,
+  eyePosition,
+  verticalPosition,
+  zoom
+
+].forEach(
+  control => {
+
+    control.addEventListener(
+      "input",
+      () => {
+
+        updateControlLabels();
+
+        calculateCrop();
+
+        render();
+
+      }
+    );
+
+  }
+);
+
+
+/* ============================================================
+   CONTROL LABELS
+   ============================================================ */
+
+function updateControlLabels() {
+
+  headroomValue.textContent =
+    `${headroom.value}%`;
+
+
+  faceSizeValue.textContent =
+    `${faceSize.value}%`;
+
+
+  eyePositionValue.textContent =
+    `${eyePosition.value}%`;
+
+
+  const vertical =
+    Number(
+      verticalPosition.value
+    );
+
+
+  verticalValue.textContent =
+    vertical > 0
+      ? `+${vertical}`
+      : `${vertical}`;
+
+
+  zoomValue.textContent =
+    `${Number(
+      zoom.value
+    ).toFixed(2)}×`;
+
+}
+
+
+/* ============================================================
+   RESET CONTROLS
+   ============================================================ */
+
+function resetControls() {
+
+  headroom.value =
+    DEFAULTS.headroom;
+
+
+  faceSize.value =
+    DEFAULTS.faceSize;
+
+
+  eyePosition.value =
+    DEFAULTS.eyePosition;
+
+
+  verticalPosition.value =
+    DEFAULTS.vertical;
+
+
+  zoom.value =
+    DEFAULTS.zoom;
+
+
+  updateControlLabels();
+
+}
+
+
+/* ============================================================
+   AUTO CROP
+   ============================================================ */
+
+autoCropButton.addEventListener(
+  "click",
+  async () => {
+
+    if (!sourceImage) {
+
+      status.textContent =
+        "Please select an image first.";
+
+      return;
+
+    }
+
+
+    resetControls();
+
+
+    manualOffsetX = 0;
+
+    manualOffsetY = 0;
+
+
+    await detectFaces();
+
+  }
+);
+
+
+/* ============================================================
+   RESET
+   ============================================================ */
+
+resetButton.addEventListener(
+  "click",
+  () => {
+
+    resetControls();
+
+
+    manualOffsetX = 0;
+
+    manualOffsetY = 0;
+
+
+    previewMode =
+      "after";
+
+
+    updatePreviewButtons();
+
+
+    if (sourceImage) {
+
+      calculateCrop();
+
+      render();
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   RESET VIEW
+   ============================================================ */
+
+resetViewButton.addEventListener(
+  "click",
+  () => {
+
+    manualOffsetX = 0;
+
+    manualOffsetY = 0;
+
+
+    zoom.value =
+      1;
+
+
+    updateControlLabels();
+
+
+    calculateCrop();
+
+    render();
+
+  }
+);
+
+
+/* ============================================================
+   POINTER DRAG
+   ============================================================ */
+
+canvas.addEventListener(
+  "pointerdown",
+  event => {
+
+    if (
+      previewMode !== "after" ||
+      !sourceImage ||
+      !crop
+    ) {
+
+      return;
+
+    }
+
+
+    const now =
+      performance.now();
+
+
+    /*
+     * Double click / double tap.
+     */
+
+    if (
+      now -
+      lastTapTime <
+      300
+    ) {
+
+      manualOffsetX = 0;
+
+      manualOffsetY = 0;
+
+      zoom.value = 1;
+
+      updateControlLabels();
+
+      calculateCrop();
+
+      render();
+
+      lastTapTime = 0;
+
+      return;
+
+    }
+
+
+    lastTapTime =
+      now;
+
+
+    dragging = true;
+
+
+    canvas.setPointerCapture(
+      event.pointerId
+    );
+
+
+    lastPointerX =
+      event.clientX;
+
+
+    lastPointerY =
+      event.clientY;
+
+  }
+);
+
+
+canvas.addEventListener(
+  "pointermove",
+  event => {
+
+    if (
+      !dragging ||
+      !crop ||
+      previewMode !== "after"
+    ) {
+
+      return;
+
+    }
+
+
+    const dx =
+      event.clientX -
+      lastPointerX;
+
+
+    const dy =
+      event.clientY -
+      lastPointerY;
+
+
+    lastPointerX =
+      event.clientX;
+
+
+    lastPointerY =
+      event.clientY;
+
+
+    const sourcePerScreenX =
+      crop.width /
+      Math.max(
+        1,
+        canvas.clientWidth
+      );
+
+
+    const sourcePerScreenY =
+      crop.height /
+      Math.max(
+        1,
+        canvas.clientHeight
+      );
+
+
+    manualOffsetX -=
+      dx *
+      sourcePerScreenX;
+
+
+    manualOffsetY -=
+      dy *
+      sourcePerScreenY;
+
+
+    calculateCrop();
+
+    render();
+
+  }
+);
+
+
+canvas.addEventListener(
+  "pointerup",
+  event => {
+
+    dragging = false;
+
+
+    try {
+
+      canvas.releasePointerCapture(
+        event.pointerId
+      );
+
+    } catch {}
+
+  }
+);
+
+
+canvas.addEventListener(
+  "pointercancel",
+  () => {
+
+    dragging = false;
+
+  }
+);
+
+
+/* ============================================================
+   WHEEL ZOOM
+   ============================================================ */
+
+canvas.addEventListener(
+  "wheel",
+  event => {
+
+    if (
+      previewMode !== "after" ||
+      !sourceImage
+    ) {
+
+      return;
+
+    }
+
+
+    event.preventDefault();
+
+
+    const current =
+      Number(
+        zoom.value
+      );
+
+
+    const amount =
+      event.deltaY < 0
+        ? 0.05
+        : -0.05;
+
+
+    zoom.value =
+      Math.max(
+        0.60,
+
+        Math.min(
+          2.50,
+          current + amount
+        )
+      );
+
+
+    updateControlLabels();
+
+
+    calculateCrop();
+
+    render();
+
+  },
+  {
+    passive: false
+  }
+);
+
+
+/* ============================================================
+   PINCH ZOOM
+   ============================================================ */
+
+canvas.addEventListener(
+  "touchstart",
+  event => {
+
+    if (
+      event.touches.length === 2
+    ) {
+
+      pinchDistance =
+        getTouchDistance(
+          event.touches[0],
+          event.touches[1]
+        );
+
+
+      pinchStartZoom =
+        Number(
+          zoom.value
+        );
+
+    }
+
+  },
+  {
+    passive: true
+  }
+);
+
+
+canvas.addEventListener(
+  "touchmove",
+  event => {
+
+    if (
+      event.touches.length !== 2 ||
+      pinchDistance === null
+    ) {
+
+      return;
+
+    }
+
+
+    event.preventDefault();
+
+
+    const distance =
+      getTouchDistance(
+        event.touches[0],
+        event.touches[1]
+      );
+
+
+    if (
+      distance <= 0
+    ) {
+
+      return;
+
+    }
+
+
+    const ratio =
+      distance /
+      pinchDistance;
+
+
+    const next =
+      Math.max(
+        0.60,
+
+        Math.min(
+          2.50,
+
+          pinchStartZoom *
+          ratio
+        )
+      );
+
+
+    zoom.value =
+      next;
+
+
+    updateControlLabels();
+
+
+    calculateCrop();
+
+    render();
+
+  },
+  {
+    passive: false
+  }
+);
+
+
+canvas.addEventListener(
+  "touchend",
+  () => {
+
+    pinchDistance = null;
+
+  }
+);
+
+
+function getTouchDistance(
+  a,
+  b
+) {
+
+  const dx =
+    a.clientX -
+    b.clientX;
+
+
+  const dy =
+    a.clientY -
+    b.clientY;
+
+
+  return Math.sqrt(
+    dx * dx +
+    dy * dy
+  );
+
+}
+
+
+/* ============================================================
+   CAMERA
+   ============================================================ */
+
+cameraButton.addEventListener(
+  "click",
+  openCamera
+);
+
+
+closeCamera.addEventListener(
+  "click",
+  closeCameraModal
+);
+
+
+async function openCamera() {
+
+  if (
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.getUserMedia
+  ) {
+
+    alert(
+      "Camera API is not available. Open this page using HTTPS or localhost."
+    );
+
+    return;
+
+  }
+
+
+  cameraModal.classList.remove(
+    "hidden"
+  );
+
+
+  await startCamera();
+
+}
+
+
+async function startCamera() {
+
+  stopCamera();
+
+
+  try {
+
+    cameraStream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video: {
+
+          facingMode:
+            cameraFacingMode,
+
+          width: {
+            ideal: 1920
+          },
+
+          height: {
+            ideal: 1080
+          }
+
+        },
+
+        audio: false
+
+      });
+
+
+    cameraVideo.srcObject =
+      cameraStream;
+
+
+    await cameraVideo.play();
+
+
+  } catch (error) {
+
+    console.error(
+      "Camera error:",
+      error
+    );
+
+
+    status.textContent =
+      "Camera access failed. Check browser permission.";
+
+  }
+
+}
+
+
+function stopCamera() {
+
+  if (!cameraStream) {
+    return;
+  }
+
+
+  cameraStream
+    .getTracks()
+    .forEach(
+      track => {
+        track.stop();
+      }
+    );
+
+
+  cameraStream =
+    null;
+
+
+  cameraVideo.srcObject =
+    null;
+
+}
+
+
+function closeCameraModal() {
+
+  stopCamera();
+
+
+  cameraModal.classList.add(
+    "hidden"
+  );
+
+}
+
+
+switchCamera.addEventListener(
+  "click",
+  async () => {
+
+    cameraFacingMode =
+      cameraFacingMode === "user"
+        ? "environment"
+        : "user";
+
+
+    await startCamera();
+
+  }
+);
+
+
+/* ============================================================
+   CAPTURE CAMERA PHOTO
+   ============================================================ */
+
+capturePhoto.addEventListener(
+  "click",
+  () => {
+
+    if (
+      !cameraVideo.videoWidth ||
+      !cameraVideo.videoHeight
+    ) {
+
+      return;
+
+    }
+
+
+    const captureCanvas =
+      document.createElement(
+        "canvas"
+      );
+
+
+    captureCanvas.width =
+      cameraVideo.videoWidth;
+
+
+    captureCanvas.height =
+      cameraVideo.videoHeight;
+
+
+    const captureContext =
+      captureCanvas.getContext(
+        "2d"
+      );
+
+
+    /*
+     * Front camera preview is mirrored by some browsers.
+     *
+     * For a normal photograph we don't mirror the captured
+     * pixels. This preserves document/text orientation.
+     */
+
+    captureContext.drawImage(
+
+      cameraVideo,
+
+      0,
+      0,
+
+      captureCanvas.width,
+      captureCanvas.height
+
+    );
+
+
+    captureCanvas.toBlob(
+      blob => {
+
+        if (!blob) {
+
+          return;
+
+        }
+
+
+        const file =
+          new File(
+            [
+              blob
+            ],
+            "camera-photo.jpg",
+            {
+              type:
+                "image/jpeg"
+            }
+          );
+
+
+        closeCameraModal();
+
+
+        loadImageFile(file);
+
+      },
+
+      "image/jpeg",
+
+      0.95
+
+    );
+
+  }
+);
+
+
+/* ============================================================
+   DOWNLOAD
+   ============================================================ */
+
+downloadButton.addEventListener(
+  "click",
+  () => {
+
+    if (
+      !sourceImage ||
+      !crop
+    ) {
+
+      status.textContent =
+        "Please select an image first.";
+
+      return;
+
+    }
+
+
+    const output =
+      getOutputSize();
+
+
+    const exportCanvas =
+      document.createElement(
+        "canvas"
+      );
+
+
+    exportCanvas.width =
+      output.width;
+
+
+    exportCanvas.height =
+      output.height;
+
+
+    const exportContext =
+      exportCanvas.getContext(
+        "2d"
+      );
+
+
+    exportContext.imageSmoothingEnabled =
+      true;
+
+
+    exportContext.imageSmoothingQuality =
+      "high";
+
+
+    /*
+     * White background.
+     */
+
+    exportContext.fillStyle =
+      "#ffffff";
+
+
+    exportContext.fillRect(
+      0,
+      0,
+      output.width,
+      output.height
+    );
+
+
+    /*
+     * Actual photograph only.
+     *
+     * No:
+     * - eye guide
+     * - head guide
+     * - face boxes
+     * - validation graphics
+     */
+
+    exportContext.drawImage(
+
+      sourceImage,
+
+      crop.x,
+      crop.y,
+      crop.width,
+      crop.height,
+
+      0,
+      0,
+      output.width,
+      output.height
+
+    );
+
+
+    exportCanvas.toBlob(
+      blob => {
+
+        if (!blob) {
+
+          status.textContent =
+            "Could not create output.";
+
+          return;
+
+        }
+
+
+        const url =
+          URL.createObjectURL(
+            blob
+          );
+
+
+        const anchor =
+          document.createElement(
+            "a"
+          );
+
+
+        anchor.href =
+          url;
+
+
+        anchor.download =
+          createFileName();
+
+
+        document.body.appendChild(
+          anchor
+        );
+
+
+        anchor.click();
+
+
+        anchor.remove();
+
+
+        setTimeout(
+          () => {
+
+            URL.revokeObjectURL(
+              url
+            );
+
+          },
+          1000
+        );
+
+
+        status.textContent =
+          `Downloaded ${output.width} × ${output.height}px photograph.`;
+
+      },
+
+      "image/jpeg",
+
+      0.95
+
+    );
+
+  }
+);
+
+
+/* ============================================================
+   FILE NAME
+   ============================================================ */
+
+function createFileName() {
+
+  if (
+    ratioSelect.value ===
+    "custom"
+  ) {
+
+    return (
+      `face-crop-${customWidth.value}x${customHeight.value}.jpg`
+    );
+
+  }
+
+
+  return (
+    `face-crop-${ratioSelect.value.replace(":", "x")}.jpg`
+  );
+
+}
+
+
+/* ============================================================
+   OUTPUT INFO
+   ============================================================ */
+
+function updateOutputInfo() {
+
+  const output =
+    getOutputSize();
+
+
+  outputSize.textContent =
+    `${output.width} × ${output.height}px`;
+
+}
+
+
+/* ============================================================
+   INITIAL PREVIEW
+   ============================================================ */
+
+prepareCanvas();
+
+
+updateControlLabels();
+
+updateOutputInfo();
+
+updatePreviewButtons();
+
+
+ctx.fillStyle =
+  "#ffffff";
+
+
+ctx.fillRect(
+  0,
+  0,
+  canvas.width,
+  canvas.height
+);
+
+
+ctx.fillStyle =
+  "#777";
+
+
+ctx.font =
+  "16px system-ui";
+
+
+ctx.textAlign =
+  "center";
+
+
+ctx.fillText(
+  "Upload an image",
+  canvas.width / 2,
+  canvas.height / 2
+);
+
+
+/* ============================================================
+   PAGE UNLOAD
+   ============================================================ */
+
+window.addEventListener(
+  "beforeunload",
+  () => {
+
+    stopCamera();
+
+
+    if (sourceUrl) {
+
+      URL.revokeObjectURL(
+        sourceUrl
+      );
+
+    }
+
+  }
+);
+
+</script>
+
+</body>
+</html>
